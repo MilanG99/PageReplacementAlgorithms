@@ -1,7 +1,7 @@
 /***************************************************************************
 * File: programthree.cpp
 * Author: Milan Gulati
-* Modified: 4 April 2021
+* Modified: 8 April 2021
 * Procedures:
 * main          - generate poission distubution and determine page faults for each algorithm and working set
 ***************************************************************************/
@@ -23,8 +23,12 @@ void generateData(int *faults);
 /***************************************************************************
 * int main()
 * Author: Milan Gulati
-* Date: 4 April 2021
-* Description:  
+* Date: 8 April 2021
+* Description:  Generates poission distribution for page stream geneartion.
+                Each of the 1000 experiments, page faults are found for each
+                of the three algorithms for each working set size. At conclusion
+                of the 1000 experiments, the average page faults for each working set
+                size for each algorithm is saved into a csv file.
 *
 * Parameters:
 *   argc    I/P     int         Number of arguments on command line
@@ -77,6 +81,34 @@ int main(int argc, char *argv[])
 
         // with the faults calculated for the current experiment
         // add the faults to the corresponding index in the 2d array to get sum
+        for(int r = 0; r < 3; r++)
+        {
+            for(int c = 0; c < 19; c++)
+            {
+                if(r == 0)  // LRU row
+                {
+                    faults[r][c] += faultsLRU[c];   // add LRU faults for that working set to 2d array
+                }
+                if(r == 1)  // FIFO row
+                {
+                    faults[r][c] += faultsFIFO[c];  // add FIFO faults for that working set to 2d array
+                }
+                if(r == 2)  // CLOCK row
+                {
+                    faults[r][c] += faultsCLOCK[c]; // add CLOCK faults for that working set to 2d array
+                }
+            }
+        }
+
+        cout << "\n" << endl;
+        for(int r = 0; r<3;r++)
+        {
+            for(int c=0; c<19;c++)
+            {
+                cout << faults[r][c] << " ";
+            }
+            cout << endl;
+        }
 
 //    }
 
