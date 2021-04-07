@@ -6,10 +6,12 @@
 * main          - generate poission distubution and determine page faults for each algorithm and working set
 ***************************************************************************/
 
+/* Libraries */
 #include <iostream> // input/output
 #include <random>   // poission distrubution
 #include <algorithm>        // vectors
 #include <bits/stdc++.h>    // queues
+#include <fstream>  // write csv file
 
 using namespace std;
 
@@ -17,7 +19,7 @@ using namespace std;
 void LRU(int *pageStream, int numPages, int *pageFaults, int numWorkSets);      // Least Recently Used (LRU) Algorithm
 void FIFO(int *pageStream, int numPages, int *pageFaults, int numWorkSets);     // First In First Out (FIFO) Algorithm
 void CLOCK(int *pageStream, int numPages, int *pageFaults, int numWorkSets);    // CLOCK Algorithm
-void generateData(int *faults);
+void generateData(int faults[][19], int numAlgs, int numWorkSets);  // print and save data to data.csv
 
 
 /***************************************************************************
@@ -67,17 +69,13 @@ int main(int argc, char *argv[])
             int temp = distribution(gen);
             pages[i] = temp; // store the page into temp
         }
+
         int numPages = sizeof(pages)/sizeof(pages[0]);  // number of pages
         int numWorkSets = sizeof(faultsFIFO)/sizeof(faultsFIFO[0]);   // number of working sets for each alg to use (19)
 
         LRU(pages, numPages, faultsLRU, numWorkSets);   // find faults for each working set with LRU for this round
         FIFO(pages, numPages, faultsFIFO, numWorkSets); // find faults for each working set with FIFO for this round
         // find faults for each working set with CLOCK for this round
-
-        cout << "LRU: " << endl;
-        for(int c = 0; c < numWorkSets; c++) { cout << faultsLRU[c] << " ";}
-        cout << "\nFIFO: " << endl;
-        for(int c = 0; c < numWorkSets; c++) { cout << faultsFIFO[c] << " ";}
 
         // with the faults calculated for the current experiment
         // add the faults to the corresponding index in the 2d array to get sum
@@ -99,22 +97,12 @@ int main(int argc, char *argv[])
                 }
             }
         }
-
-        cout << "\n" << endl;
-        for(int r = 0; r<3;r++)
-        {
-            for(int c=0; c<19;c++)
-            {
-                cout << faults[r][c] << " ";
-            }
-            cout << endl;
-        }
-
 //    }
 
     // now divide each element in the array by 1000 to get average
 
     // now pass 2d array to generate data function to get csv file
+    generateData(faults, 3, numWorkSets);
 
     return 0;   // return 0 on successfully completing program
 }
@@ -197,10 +185,41 @@ void CLOCK(int *pageStream, int numPages, int *pageFaults, int numWorkSets)
 
 // given 2d array, print to csv and to console
 // when printing to csv, add row and column labels
-void generateData(int *faults)
+void generateData(int faults[][19], int numAlgs, int numWorkSets)
 {
+    // print to console
+    cout << "\nAverage Page Faults for each Algorithm for each Working Set Size (2-20):\n" << endl;
+    for(int r = 0; r < numAlgs;r++)
+    {
+        if(r == 0)
+            cout << "LRU:\t";
+        if(r == 1)
+            cout << "FIFO:\t";
+        if(r == 2)
+            cout << "CLOCK:\t";
 
+        for(int c = 0; c < numWorkSets;c++)
+        {
+            cout << faults[r][c] << " ";
+        }
+        cout << endl;
+    }
+    cout << "\nData Saved to data.csv for plotting.\n\n";
+
+    ofstream dataFile("data.csv");      // open/create new data file
+
+    for(int r = 0; r < numAlgs; r++)    // iterate over faults array to save
+    {
+        for(int c = 0; c < numWorkSets; c++)
+        {
+            dataFile << faults[r][c];   // save index into file
+            if(c != numWorkSets)        // only add comma if not at end of row
+            {
+                dataFile << ",";
+            }
+        }
+        dataFile << "\n";
+    }
+
+    dataFile.close();   // close the data file
 }
-
-
-
