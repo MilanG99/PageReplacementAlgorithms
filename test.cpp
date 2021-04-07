@@ -19,6 +19,7 @@ using namespace std;
 int LRU(int *pages, int n, int working_size);
 int FIFO(int *pages, int n, int working_size);
 int CLOCK(int *pages, int n, int working_size);
+void generateData(int *faults);
 
 int main()
 {
@@ -121,4 +122,13 @@ int CLOCK(int *pages, int n, int working_size)
 
 
     return pageFaults;
+}
+
+
+// function prints faults to console
+// as well as saves the 2d array to a csv file data.csv
+// use this data to create plots in excel
+void generateData(int *faults)
+{
+
 }
