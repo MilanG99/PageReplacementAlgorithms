@@ -23,10 +23,10 @@ void generateData(int *faults);
 
 int main()
 {
-    int pages[] = {7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2};
+    int pages[] = {2,3,2,1,5,2,4,5,3,2,5,2};
     int n = sizeof(pages)/sizeof(pages[0]); // array length
     
-    int working_size = 4; // working set size
+    int working_size = 3; // working set size
     cout << LRU(pages, n, working_size) << " LRU" << endl;
     cout << FIFO(pages, n, working_size) << " FIFO" << endl;
     return 0;
@@ -48,14 +48,14 @@ int LRU(int *pages, int n, int working_size)
             {
                 set.erase(set.begin());     // delete first element of vector
                 set.push_back(pages[i]);    // add page to end of the vector
+                pageFaults++;   // added element so increment page faults
+
             }
             // else it can fit the page
             else
             {
                 set.push_back(pages[i]);    // add page at current index in vector
             }
-
-            pageFaults++;   // added element so increment page faults
         }
 
         
@@ -67,15 +67,9 @@ int LRU(int *pages, int n, int working_size)
             set.push_back(pages[i]);
         }
         
-
+    }
 // TESTING =----------------------------------------------------------------
-        cout << endl;
-        for (int i : set)
-        {
-            cout << i << " ";
-        }
-        cout << endl;
-        }
+
 // end TESTING =------------------------------------------------------------
 
     return pageFaults;
@@ -97,17 +91,24 @@ int FIFO(int *pages, int n, int working_size)
             {
                 set.pop_front();            // remove from front of queue
                 set.push_back(pages[i]);    // add to back of queue
-
+                pageFaults++;   // added element so increment page faults
             }
             // else queue has room
             else if(set.size() < working_size)
             {
                 set.push_back(pages[i]);    // add to end of deque
             }
-
-            pageFaults++;   // another page fault
         }
         // else page already in queue - do nothing
+
+
+
+        cout << endl;
+        for (int i : set)
+        {
+            cout << i << " ";
+        }
+        cout << endl;
     }
 
     return pageFaults;

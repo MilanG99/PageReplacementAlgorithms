@@ -53,8 +53,6 @@ int main(int argc, char *argv[])
     default_random_engine gen;
     poisson_distribution<int> distribution(10);
 
-//    int p[25] = {}; // probabilpageFaultsity that the page number generated will be 0,1,2,3,4,5....25
-
 //    for(int j = 0; j <= 1000; j++)
 //    {
 
@@ -64,7 +62,7 @@ int main(int argc, char *argv[])
 
         // Do 1000 experiments
         // to get 1000 page nums for this round
-        for(int i = 0; i <= num_expr; i++)
+        for(int i = 0; i <= num_pageNum; i++)
         {
             int temp = distribution(gen);
             pages[i] = temp; // store the page into temp
@@ -125,14 +123,13 @@ void LRU(int *pageStream, int numPages, int *pageFaults, int numWorkSets)
                 {
                     set.erase(set.begin());     // delete first element of vector
                     set.push_back(pageStream[i]);    // add page to end of the vector
+                    pageFaults[w]++;   // added element so increment page faults
                 }
-                // else it can fit the page
-                else
+                // else if it can fit the page
+                else if(set.size() < working_size)
                 {
                     set.push_back(pageStream[i]);    // add page at current index in vector
                 }
-
-                pageFaults[w]++;   // added element so increment page faults
             }
 
             // else it already contains the page number - not a page fault          ----=========== FIX THIS =======================----
@@ -164,14 +161,13 @@ void FIFO(int *pageStream, int numPages, int *pageFaults, int numWorkSets)
                 {
                     set.pop_front();            // remove from front of queue
                     set.push_back(pageStream[i]);    // add to back of queue
+                    pageFaults[w]++;   // another page fault
                 }
-                // else queue has room
+                // else if queue has room
                 else if(set.size() < working_size)
                 {
                     set.push_back(pageStream[i]);    // add to end of deque
                 }
-
-                pageFaults[w]++;   // another page fault
             }
             // else page already in queue - do nothing
         }
@@ -180,7 +176,51 @@ void FIFO(int *pageStream, int numPages, int *pageFaults, int numWorkSets)
 
 void CLOCK(int *pageStream, int numPages, int *pageFaults, int numWorkSets)
 {
+    for(int w = 0; w < numWorkSets; w++)
+    {
+        int working_size = w + 2;   // array is 0-19 so add 2 for 2-20
 
+        vector<int> set(working_size);    // hold working set of current iteration
+        int use[working_size] = {0};
+
+        // iterate through page stream
+        for(int i = 0; i < numPages; i++)
+        {
+            // if current use bit is one
+            // check next use bit
+
+            // check if current use bit is zero
+            // if it is zero replace the page and set use bit to one
+
+        }
+        
+        // iterate through page stream
+        // for(int i = 0; i < numPages; i++)
+        // {
+            // // if set does not contain current page
+            // if(!(find(set.begin(), set.end(), pageStream[i]) != set.end()))
+            // {
+            //     // if set is full
+            //     if(set.size() == working_size)
+            //     {
+
+            //     }
+            //     // set not full yet
+            //     else
+            //     {
+
+            //     }
+
+            // }
+            // // else it aready contains the page number
+            // else
+            // {
+            //     // set use bit for page index to one
+
+            // }
+        // }
+
+    }
 }
 
 // given 2d array, print to csv and to console
