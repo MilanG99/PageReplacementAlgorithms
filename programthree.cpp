@@ -9,11 +9,18 @@
 /* Libraries */
 #include <iostream> // input/output
 #include <random>   // poission distrubution
-#include <algorithm>        // vectors
+#include <algorithm>        // vectors and find()
 #include <bits/stdc++.h>    // queues
 #include <fstream>  // write csv file
 
 using namespace std;
+
+/* Clock Struct */
+struct clockElement
+{
+    int page;   // store the page number
+    int use;    // store the use bit (0 or 1)
+};
 
 /* Function Prototypes */
 void LRU(int *pageStream, int numPages, int *pageFaults, int numWorkSets);      // Least Recently Used (LRU) Algorithm
@@ -180,46 +187,62 @@ void CLOCK(int *pageStream, int numPages, int *pageFaults, int numWorkSets)
     {
         int working_size = w + 2;   // array is 0-19 so add 2 for 2-20
 
-        vector<int> set(working_size);    // hold working set of current iteration
-        int use[working_size] = {0};
+        // array of clockElements to hold working set
+        // init all pages to -1 to show that no page occupies that slot
+        // init all use bits to zero to show slot is currently empty
+        clockElement arr[working_size] = {-1,0};
 
         // iterate through page stream
         for(int i = 0; i < numPages; i++)
         {
-            // if current use bit is one
-            // check next use bit
+            int pg = pageStream[i];   // current page
 
-            // check if current use bit is zero
-            // if it is zero replace the page and set use bit to one
+            int pageIndex = -1; // store the page index in the array if found, -1 if not
+            int useIndex = -1;  // store the use bit index in the array if it is 0
+
+
+
+            // check if the set already contains the current page
+            for(int p = 0; p < working_size; p++)
+            {
+                if(arr[p].use == 0)
+                {
+                    useIndex = p;   // next free use bit (0)
+                }
+                if(arr[p].page == pg) 
+                {
+                    pageIndex = p;    // page found
+                    arr[p].use = 1;   // set usebit to one for page index
+                }
+                else
+                {
+                    arr[p].use = 0; // page not match set use index bit to 0
+                }
+            }
+
+            // if the page is not in the array
+            if(pageIndex == -1)
+            {
+                // if no free use bit
+                if(useIndex = -1)
+                {
+
+                }
+                // else there is a free use bit
+                else
+                {
+                    // add the page number at that index and set the usebit to one
+                    arr[useIndex].page = pg;
+                    arr[useIndex].use = 1;
+                }
+            }
+            // else is in array page match
+            else
+            {
+                arr[pageIndex].use = 1; // set the usebit of that page to one
+            }
 
         }
-        
-        // iterate through page stream
-        // for(int i = 0; i < numPages; i++)
-        // {
-            // // if set does not contain current page
-            // if(!(find(set.begin(), set.end(), pageStream[i]) != set.end()))
-            // {
-            //     // if set is full
-            //     if(set.size() == working_size)
-            //     {
-
-            //     }
-            //     // set not full yet
-            //     else
-            //     {
-
-            //     }
-
-            // }
-            // // else it aready contains the page number
-            // else
-            // {
-            //     // set use bit for page index to one
-
-            // }
-        // }
-
     }
 }
 
