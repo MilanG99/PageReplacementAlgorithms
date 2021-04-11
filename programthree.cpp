@@ -200,8 +200,6 @@ void CLOCK(int *pageStream, int numPages, int *pageFaults, int numWorkSets)
             int pageIndex = -1; // store the page index in the array if found, -1 if not
             int useIndex = -1;  // store the use bit index in the array if it is 0
 
-
-
             // check if the set already contains the current page
             for(int p = 0; p < working_size; p++)
             {
@@ -226,7 +224,14 @@ void CLOCK(int *pageStream, int numPages, int *pageFaults, int numWorkSets)
                 // if no free use bit
                 if(useIndex = -1)
                 {
-
+                    // go through the entire buffer and set all usebits to zero
+                    // return to start index and put page there
+                    for(int p = 0; p < working_size; p++)
+                    {
+                        arr[p].use = 0; // set use bit to zero
+                    }
+                    arr[0].page = pg;
+                    arr[0].use = 1;
                 }
                 // else there is a free use bit
                 else
@@ -241,8 +246,10 @@ void CLOCK(int *pageStream, int numPages, int *pageFaults, int numWorkSets)
             {
                 arr[pageIndex].use = 1; // set the usebit of that page to one
             }
-
         }
+
+        // copy page faults for current working set to page faults array
+        pageFaults[w] = arr[w].page;
     }
 }
 
