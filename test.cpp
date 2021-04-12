@@ -16,6 +16,13 @@
 
 using namespace std;
 
+/* Clock Struct */
+struct clockElement
+{
+    int page;   // store the page number
+    int use;    // store the use bit (0 or 1)
+};
+
 int LRU(int *pages, int n, int working_size);
 int FIFO(int *pages, int n, int working_size);
 int CLOCK(int *pages, int n, int working_size);
@@ -29,6 +36,7 @@ int main()
     int working_size = 3; // working set size
     cout << LRU(pages, n, working_size) << " LRU" << endl;
     cout << FIFO(pages, n, working_size) << " FIFO" << endl;
+    cout << CLOCK(pages, n, working_size) << " CLOCK" << endl;
     return 0;
 }
 
@@ -102,13 +110,14 @@ int FIFO(int *pages, int n, int working_size)
         // else page already in queue - do nothing
 
 
-
+/*
         cout << endl;
         for (int i : set)
         {
             cout << i << " ";
         }
         cout << endl;
+*/
     }
 
     return pageFaults;
@@ -118,9 +127,76 @@ int CLOCK(int *pages, int n, int working_size)
 {
     int pageFaults = 0;
 
+    clockElement set[working_size]; // array of clock elements to hold working set
+   
+    for(int i = 0; i < working_size; i++)
+    {
+        set[i].page = -1;   // init all pages to -1
+        set[i].use = 0;     // init all use bits to 0
+    }
 
+    // iterate over the circular buffer clock
+    //for(int i = 0; i < working_size; i++)
+    for(int p = 0; p < n; p++)
+    {
+        // iterate over the page stream
+        //for(int p = 0; p < n; p++)
+        for(int i = 0; i < working_size; i++)
+        {
+            // first check if the page is in the set already and if all usebits full
+            bool inSet = false;
+            bool useFull = true;
+            for(int c = 0; c < working_size; c++)
+            {
+                if(set[c].page == pages[p])
+                { 
+                    inSet = true;
+                    set[c].use = 1;
+                }
+                if(set[c].use == 0) useFull = false;    // at least one use bit is empty
+            }
 
+            // if in the set then set use bit to 1
+            //if(inSet)   set[i].use = 1;
+            // executes if page not in set and all usebit full
+            if(!inSet && useFull)
+            {
+                // set all usebits to 0 and replace current page
+                for(int c = 0; c < working_size; c++)
+                    set[c].use = 0;
+                set[i].page = pages[p];
+                set[i].use = 1;
+                pageFaults++;
+                cout << "page fault!" << endl;
+            }
+            // executes if page is not in the set
+            else if(!inSet && !useFull)
+            {
+                // current usebit is a 1 set to zero and continue moving hand (next index)
+                if(set[i].use == 1)
+                {
+                    set[i].use = 0;
+                }
+                // current usebit is 0 replace page here - page fault
+                else
+                { 
+                    if(set[i].page != -1) pageFaults++; // if not first entries
+                    set[i].use = 1;
+                    set[i].page = pages[p];
+                    cout << "page fault!" << endl;
+                }
+            }
 
+            cout << endl;
+            cout << "page looking for: " << pages[p] << endl;
+            for (int a = 0; a < working_size; a++)
+            {
+                cout << set[a].page << " ";
+            }
+            cout << "\ninSet: " << inSet << " usefull: " << useFull;
+            cout << endl;
+        }
+    }
 
     return pageFaults;
 }

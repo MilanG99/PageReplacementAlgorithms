@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 
         LRU(pages, numPages, faultsLRU, numWorkSets);   // find faults for each working set with LRU for this round
         FIFO(pages, numPages, faultsFIFO, numWorkSets); // find faults for each working set with FIFO for this round
-        // find faults for each working set with CLOCK for this round
+        CLOCK(pages, numPages, faultsCLOCK, numWorkSets);// find faults for each working set with CLOCK for this round
 
         // with the faults calculated for the current experiment
         // add the faults to the corresponding index in the 2d array to get sum
@@ -186,11 +186,59 @@ void CLOCK(int *pageStream, int numPages, int *pageFaults, int numWorkSets)
     for(int w = 0; w < numWorkSets; w++)
     {
         int working_size = w + 2;   // array is 0-19 so add 2 for 2-20
+        clockElement set[working_size]; // array of clock elements to hold working set
+        for(int i = 0; i < working_size; i++)
+        {
+            set[i].page = -1;   // init all pages to -1
+            set[i].use = 0;     // init all use bits to 0
+        }
+
+        // at this point we have page stream array
+        // at this point we have an initialized buffer
+
+        for(int i = 0; i < working_size; i++)
+        {
+            for(int p = 0; p < numPages; p++)
+            {
+                if((set[i].page == pageStream[p]) && (set[i].use == 1))
+                {
+                    // do nothing
+                }
+                else if((set[i].page == pageStream[p]) && (set[i].use == 0))
+                {
+                    // is page trying to add and usebit zero, set use bit to 1 and continue to next page
+                    set[i].use = 1;
+                }
+                else if((set[i].page != pageStream[p]) && (set[i].use == 1))
+                {
+                    // not page trying to add and use bit one, set use bit to 0 and continue
+                    set[i].use = 0;
+                }
+                else if((set[i].page != pageStream[p]) && (set[i].use == 0))
+                {
+                    // not page trying to add and use bit is zero, replace the page and set use bit to one
+                    set[i].page = pageStream[p];
+                    set[i].use = 1;
+                    pageFaults[w]++;    // page fault occured
+                }
+            }
+        }
+
+
+
+        /*
+        int faults = 0;             // track page faults for current working set
+        int working_size = w + 2;   // array is 0-19 so add 2 for 2-20
 
         // array of clockElements to hold working set
         // init all pages to -1 to show that no page occupies that slot
         // init all use bits to zero to show slot is currently empty
-        clockElement arr[working_size] = {-1,0};
+        clockElement arr[working_size];
+        for(int i = 0; i < working_size; i++)
+        {
+            arr[i].page = -1;
+            arr[i].use = 0;
+        }
 
         // iterate through page stream
         for(int i = 0; i < numPages; i++)
@@ -218,7 +266,7 @@ void CLOCK(int *pageStream, int numPages, int *pageFaults, int numWorkSets)
                 }
             }
 
-            // if the page is not in the array
+            // if the page is not in the array - page fault
             if(pageIndex == -1)
             {
                 // if no free use bit
@@ -240,6 +288,7 @@ void CLOCK(int *pageStream, int numPages, int *pageFaults, int numWorkSets)
                     arr[useIndex].page = pg;
                     arr[useIndex].use = 1;
                 }
+                faults++;
             }
             // else is in array page match
             else
@@ -249,7 +298,8 @@ void CLOCK(int *pageStream, int numPages, int *pageFaults, int numWorkSets)
         }
 
         // copy page faults for current working set to page faults array
-        pageFaults[w] = arr[w].page;
+        pageFaults[w] = faults;
+        */
     }
 }
 
