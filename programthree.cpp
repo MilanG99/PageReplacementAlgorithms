@@ -185,6 +185,11 @@ void CLOCK(int *pageStream, int numPages, int *pageFaults, int numWorkSets)
 {
     for(int w = 0; w < numWorkSets; w++)
     {
+
+    }
+}
+
+        /*
         int working_size = w + 2;   // array is 0-19 so add 2 for 2-20
         clockElement set[working_size]; // array of clock elements to hold working set
         for(int i = 0; i < working_size; i++)
@@ -223,85 +228,7 @@ void CLOCK(int *pageStream, int numPages, int *pageFaults, int numWorkSets)
                 }
             }
         }
-
-
-
-        /*
-        int faults = 0;             // track page faults for current working set
-        int working_size = w + 2;   // array is 0-19 so add 2 for 2-20
-
-        // array of clockElements to hold working set
-        // init all pages to -1 to show that no page occupies that slot
-        // init all use bits to zero to show slot is currently empty
-        clockElement arr[working_size];
-        for(int i = 0; i < working_size; i++)
-        {
-            arr[i].page = -1;
-            arr[i].use = 0;
-        }
-
-        // iterate through page stream
-        for(int i = 0; i < numPages; i++)
-        {
-            int pg = pageStream[i];   // current page
-
-            int pageIndex = -1; // store the page index in the array if found, -1 if not
-            int useIndex = -1;  // store the use bit index in the array if it is 0
-
-            // check if the set already contains the current page
-            for(int p = 0; p < working_size; p++)
-            {
-                if(arr[p].use == 0)
-                {
-                    useIndex = p;   // next free use bit (0)
-                }
-                if(arr[p].page == pg) 
-                {
-                    pageIndex = p;    // page found
-                    arr[p].use = 1;   // set usebit to one for page index
-                }
-                else
-                {
-                    arr[p].use = 0; // page not match set use index bit to 0
-                }
-            }
-
-            // if the page is not in the array - page fault
-            if(pageIndex == -1)
-            {
-                // if no free use bit
-                if(useIndex = -1)
-                {
-                    // go through the entire buffer and set all usebits to zero
-                    // return to start index and put page there
-                    for(int p = 0; p < working_size; p++)
-                    {
-                        arr[p].use = 0; // set use bit to zero
-                    }
-                    arr[0].page = pg;
-                    arr[0].use = 1;
-                }
-                // else there is a free use bit
-                else
-                {
-                    // add the page number at that index and set the usebit to one
-                    arr[useIndex].page = pg;
-                    arr[useIndex].use = 1;
-                }
-                faults++;
-            }
-            // else is in array page match
-            else
-            {
-                arr[pageIndex].use = 1; // set the usebit of that page to one
-            }
-        }
-
-        // copy page faults for current working set to page faults array
-        pageFaults[w] = faults;
         */
-    }
-}
 
 // given 2d array, print to csv and to console
 // when printing to csv, add row and column labels

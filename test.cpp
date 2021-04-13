@@ -3,7 +3,6 @@
     TODO
     - Fix LRU algorithm to not move around elemnts
     - replace 'set' name everywhere
-    - create clock algorithm
     - 1000 experiments? or 1000 experiments for poisson distribution
 */
 ////
@@ -126,7 +125,6 @@ int FIFO(int *pages, int n, int working_size)
 int CLOCK(int *pages, int n, int working_size)
 {
     int pageFaults = 0;
-
     clockElement set[working_size]; // array of clock elements to hold working set
    
     // init the set
@@ -136,12 +134,11 @@ int CLOCK(int *pages, int n, int working_size)
         set[i].use = 0;     // init all use bits to 0
     }
 
-    int currSetI = 0;       // start at index zero of set
-    int currPageI = 0;      // start at index zero of pages
-    while(currPageI != n)   // while still pages
+    int setInd = 0;       // start at index zero of set
+    int pageInd = 0;      // start at index zero of pages
+    while(pageInd != n)   // while still pages
     {
-        int currPage = pages[currPageI];    // get current page
-        cout << " CURRENT PAGE: " << currPage << endl;
+        int currPage = pages[pageInd];    // get current page
 
         // first check if the page is in the set already and if all usebits full
         bool inSet = false;
@@ -157,103 +154,74 @@ int CLOCK(int *pages, int n, int working_size)
             { 
                 inSet = true;
                 set[c].use = 1;  // reaffirm use bit as 1
-                //currSetI = c;   // update current set index
+                //setInd = c;   // update current set index
                 break;
             }
             
             else    // ELSE PAGE NOT MATCH SET USE BIT TO ZERO AND GO TO NEXT PAGE
             {
-                set[currSetI].use = 0;
-                //currSetI = c;   // update current set index
+                set[setInd].use = 0;
+                //setInd = c;   // update current set index
             }
 
-            if(currSetI + 1 < working_size)    currSetI++; // increment counter if at end
-            else currSetI = 0;  // else go to start again
+            if(setInd + 1 < working_size)
+                setInd++; // increment counter if at end
+            else 
+                setInd = 0;  // else go to start again
             
         }
-        /*
-        // PAGE IN SET - do not move the pointer
-        if(inSet)
-        {
-            set[currSetI].use = 1;
-            //set[currSetI].page = currPage;
-        }
-        */
 
         // PAGE NOT IN SET AND ALL USE BITS FULL
         if(!inSet && useFull)
-        {
-            // set all usebits to 0 and replace current page
-            for(int c = 0; c < working_size; c++)
-                set[c].use = 0;
-            // set[currSetI].page = currPage;
-            // set[currSetI].use = 1;
-            // pageFaults++;
+            for(int c = 0; c < working_size; c++)   // iterate over the set
+                set[c].use = 0; // set all usebits to 0     
 
-            // if(currSetI + 1 <= working_size)    currSetI++; // increment counter if at end
-            // else currSetI = 0;  // else go to start again
-        }
-
-        // PAGE NOT IN SET AND FREE USE BITS
-        //else if(!inSet && !useFull)
+        // PAGE NOT IN SET
         if(!inSet)
         {
-            while(set[currSetI].use == 1)
+            while(set[setInd].use == 1)
             {
-                set[currSetI].use = 0;
+                set[setInd].use = 0;
 
                 // go to next element in working set
-                if(currSetI + 1 < working_size)    currSetI++; // increment counter if at end
-                else currSetI = 0;  // else go to start again
+                if(setInd + 1 < working_size)
+                    setInd++; // increment counter if at end
+                else 
+                    setInd = 0;  // else go to start again
             }
             // REPLACE PAGE now use bit should be freed for current page
-            if(set[currSetI].use == 0)
+            if(set[setInd].use == 0)
             {
-                if(set[currSetI].page != -1)
-                {
-                     pageFaults++;  // page faults start being counted after first working_size number of pages loaded into set
-                     cout << "------ PAGE FAULT -----" << endl;
-                }
+                if(set[setInd].page != -1)
+                    pageFaults++;  // page faults start being counted after first working_size number of pages loaded into set
 
-                set[currSetI].page = currPage;  // set current page to curr page
-                set[currSetI].use = 1;          // set use bit to 1
+                set[setInd].page = currPage;  // set current page to curr page
+                set[setInd].use = 1;          // set use bit to 1
             }
 
             // go to next element in working set
-            if(currSetI + 1 < working_size)    currSetI++; // increment counter if at end
-            else currSetI = 0;  // else go to start again
-
-            /*
-            // current usebit is a 1 set to zero and continue moving hand (next index)
-            if(set[currSetI].use == 1)  set[currSetI].use = 0;
-
-            // current usebit is 0 replace page here - page fault
-            else
-            { 
-                if(set[currSetI].page != -1) pageFaults++; // if not first entries
-                set[currSetI].use = 1;
-                set[currSetI].page = currPage;
-            }
-
-            if(currSetI + 1 <= working_size)    currSetI++; // increment counter if at end
-            else currSetI = 0;  // else go to start again
-            */
+            if(setInd + 1 < working_size)
+                setInd++; // increment counter if at end
+            else 
+                setInd = 0;  // else go to start again
         }
+        pageInd++; // go to next page
+    }
+    return pageFaults;
+}
 
-        currPageI++; // go to next page
-
+/*
         cout << endl;
-        //cout << "page looking for: " << pages[currPageI] << endl;
         for (int a = 0; a < working_size; a++)
         {
             cout << "(" << set[a].page << " " << set[a].use << ") ";
         }
-        cout << "\ncurrPageI: " << currPageI << " currSetI: " << currSetI;
+        cout << "\npageInd: " << pageInd << " setInd: " << setInd;
         cout << "\ninSet: " << inSet << " usefull: " << useFull;
         cout << endl;
-    }
-    return pageFaults;
-}
+
+        */
+
 /*
     /// iterate over the page stream
     for(int p = 0; p < n; p++)
