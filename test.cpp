@@ -286,6 +286,48 @@ int CLOCK(int *pages, int n, int working_size)
 */
 
 
+/*
+        int working_size = w + 2;   // array is 0-19 so add 2 for 2-20
+        clockElement set[working_size]; // array of clock elements to hold working set
+        for(int i = 0; i < working_size; i++)
+        {
+            set[i].page = -1;   // init all pages to -1
+            set[i].use = 0;     // init all use bits to 0
+        }
+
+        // at this point we have page stream array
+        // at this point we have an initialized buffer
+
+        for(int i = 0; i < working_size; i++)
+        {
+            for(int p = 0; p < numPages; p++)
+            {
+                if((set[i].page == pageStream[p]) && (set[i].use == 1))
+                {
+                    // do nothing
+                }
+                else if((set[i].page == pageStream[p]) && (set[i].use == 0))
+                {
+                    // is page trying to add and usebit zero, set use bit to 1 and continue to next page
+                    set[i].use = 1;
+                }
+                else if((set[i].page != pageStream[p]) && (set[i].use == 1))
+                {
+                    // not page trying to add and use bit one, set use bit to 0 and continue
+                    set[i].use = 0;
+                }
+                else if((set[i].page != pageStream[p]) && (set[i].use == 0))
+                {
+                    // not page trying to add and use bit is zero, replace the page and set use bit to one
+                    set[i].page = pageStream[p];
+                    set[i].use = 1;
+                    pageFaults[w]++;    // page fault occured
+                }
+            }
+        }
+        */
+
+
 // function prints faults to console
 // as well as saves the 2d array to a csv file data.csv
 // use this data to create plots in excel
