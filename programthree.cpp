@@ -178,26 +178,24 @@ void LRU(int *pageStream, int *faultsLRU, int setNum)
 ***************************************************************************/
 void FIFO(int *pageStream, int *faultsFIFO, int setNum)
 {
-    int working_size = setNum + 2;   // array is 0-19 so add 2 for 2-20
-    deque<int> set; // use deque for easy traversal and FIFO removal
+    int working_size = setNum + 2;                                          // array is 0-19 so add 2 for 2-20
+    deque<int> set;                                                         // deque for easy traversal and FIFO removal
 
-    for(int i = 0; i < 1000; i++)   // iterate through each page in stream
+    for(int i = 0; i < 1000; i++)                                           // iterate through each page in stream
     {
         // if the queue does not have the current page number
         // else page already in queue - do nothing
-        if(!(find(set.begin(), set.end(), pageStream[i]) != set.end())) // if deque does not have current page num
+        if(!(find(set.begin(), set.end(), pageStream[i]) != set.end()))     // if deque does not have current page num
         {
-            // if queue is full
-            if(set.size() == working_size)
+            if(set.size() == working_size)                                  // if deque full
             {
-                set.pop_front();            // remove from front of queue
-                set.push_back(pageStream[i]);    // add to back of queue
-                faultsFIFO[setNum]++;   // another page fault
+                set.pop_front();                                            // remove old page from front
+                set.push_back(pageStream[i]);                               // add new page to back
+                faultsFIFO[setNum]++;                                       // page fault
             }
-            // else if queue has room
-            else if(set.size() < working_size)
+            else if(set.size() < working_size)                              // else not full
             {
-                set.push_back(pageStream[i]);    // add to end of deque
+                set.push_back(pageStream[i]);                               // add new page to end of deque
             }
         }
     }
@@ -294,6 +292,7 @@ void CLOCK(int *pageStream, int *pageFaults, int setNum)
 // when printing to csv, add row and column labels
 void saveData(int faults[][19], int numAlgs, int numWorkSets)
 {
+                                                                            //
     // print to console
     cout << "\n1000 Trial Average Page Faults for each Algorithm for each Working Set Size (2-20):\n" << endl;
     for(int r = 0; r < numAlgs;r++)
