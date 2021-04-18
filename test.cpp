@@ -27,6 +27,10 @@ int FIFO(int *pages, int n, int working_size);
 int CLOCK(int *pages, int n, int working_size);
 void generateData(int *faults);
 
+int clock(int *pages, int n, int working_size);
+bool checkPage(int currPage, clockElement *set, int working_size);
+//int addPage(int currPage, clockElement *set, int working_size, int setIndex);
+
 int main()
 {
     int pages[] = {2,3,2,1,5,2,4,5,3,2,5,2};
@@ -35,9 +39,96 @@ int main()
     int working_size = 3; // working set size
     cout << LRU(pages, n, working_size) << " LRU" << endl;
     cout << FIFO(pages, n, working_size) << " FIFO" << endl;
-    cout << CLOCK(pages, n, working_size) << " CLOCK" << endl;
+    //cout << CLOCK(pages, n, working_size) << " CLOCK" << endl;
+    cout << clock(pages, n, working_size) << " clock" << endl;
     return 0;
 }
+
+int clock(int *pages, int n, int working_size)
+{
+    int faults = 0;     // num page faults
+    int setIndex = 0;   // current index in set
+    int currPage = 0;   // current page number seeking
+    clockElement set[working_size]; // array of clock elements to hold working set
+
+    // init the set
+    for(int i = 0; i < working_size; i++)
+    {
+        set[i].page = -1;   // init all pages to -1 (empty)
+        set[i].use = 0;     // init all use bits to 0
+    }
+
+    for(int i = 0; i < n; i++)
+    {
+        currPage = pages[i];    // get current page
+        bool pageFound = checkPage(currPage, set, working_size);    // check if page in set already
+        if(!pageFound)
+        {
+            //setIndex = addPage(currPage, set, working_size, setIndex);
+            while(true)
+            {
+                if(set[setIndex].use == 0)  // use bit is zero
+                {
+                    if(set[setIndex].page != -1)    faults++;   // if not first page added into that spot - page fault
+                    set[setIndex].page = currPage;              // replace page
+                    set[setIndex].use = 1;                      // set use bit to one
+                    setIndex = (setIndex + 1) % working_size;   // update set index
+                    break;
+                }
+                else        // use bit is one
+                {
+                    set[setIndex].use = 0;  // set to zero
+                    setIndex = (setIndex + 1) % working_size;   // update set index
+                }                
+            }
+        }
+    }
+    return faults;
+}
+
+bool checkPage(int currPage, clockElement *set, int working_size)
+{
+    for(int i = 0; i < working_size; i++)
+    {
+        if(set[i].page == currPage) // page found
+        {
+            set[i].use = 1;         // set use bit to 1
+            return true;            // return true
+        }
+    }
+    return false;   // otherwise return false
+}
+/*
+int addPage(int currPage, clockElement *set, int working_size, int setIndex)
+{
+    while(true)
+    {
+        if(set[setIndex].use == 0)  // use bit is zero
+        {
+            set[setIndex].page = currPage;              // replace page
+            set[setIndex].use = 1;                      // set use bit to one
+            setIndex = (setIndex + 1) % working_size;   // update set index
+            return setIndex;                            // return updated set index
+        }
+        else        // use bit is one
+        {
+            set[setIndex].use = 0;  // set to zero
+            setIndex = (setIndex + 1) % working_size;   // update set index
+        }
+    }
+}
+*/
+
+
+
+
+
+
+
+
+
+
+
 
 int LRU(int *pages, int n, int working_size)
 {
