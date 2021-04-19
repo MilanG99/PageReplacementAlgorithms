@@ -1,7 +1,7 @@
 /***************************************************************************
 * File: programthree.cpp
 * Author: Milan Gulati
-* Modified: 14 April 2021
+* Modified: 18 April 2021
 * Procedures:
 * main          - generate poission distubution and determine page faults for each algorithm and working set
 * LRU           - using Least Recently Used algorithm, calculate page faults for a given working set size
@@ -51,6 +51,8 @@ void saveData(int faults[][19], int numWorkSets);                           // p
 ***************************************************************************/
 int main(int argc, char *argv[])
 {
+    int lrutot = 0;     /*****8 90U REMOVE ************************************************************8*/
+    int lrufin = 0;     /*****8 90U REMOVE ************************************************************8*/
     // 2D Array that tracks page faults for working sets size 2-20 for each algorithm
     // Rows represent:      LRU, FIFO, CLOCK
     // Columns represent:   Working Set of 2,3,4,5...,20
@@ -61,31 +63,32 @@ int main(int argc, char *argv[])
     default_random_engine gen;                                              // random number generator
     poisson_distribution<int> distribution(10);                             // poisson distribution function using lambda 10
 
-//    for(int e = 0; e < 1000; e++)
-//    {
+    for(int e = 0; e < 1000; e++)
+    {
         int faultsLRU[19] = {0};                                            // store LRU faults curr experiment
         int faultsFIFO[19] = {0};                                           // store FIFO faults curr experiment 
         int faultsClock[19] = {0};                                          // store CLOCK faults curr experiment
 
         // Do 1000 experiments
         // to get 1000 page nums for this round
-        for(int i = 0; i <= 1000; i++)
+        for(int i = 0; i <= 1000; i++)                                      // iterate 1000 times for 1000 pages
         {
             int page = distribution(gen);                                   // pass a randomly generated number into poisson function
             pages[i] = page;                                                // store new page into page stream
         }
 
-        //int numPages = sizeof(pages)/sizeof(pages[0]);  // number of pages
-        //int numPages = 1000;    // number of pages
         int numWorkSets = sizeof(faultsFIFO)/sizeof(faultsFIFO[0]);         // number of working set sizes (19 represents array containing sizes 2-20)
 
-        // get the faults for each working set size
-        for(int i = 0; i < numWorkSets; i++)
+        for(int i = 0; i < 19; i++)                                // get faults for each working set size (2-20)
         {
             LRU(pages, faultsLRU, i);                                       // calculate LRU faults for curr working set
             FIFO(pages, faultsFIFO, i);                                     // calculate FIFO faults for curr working set
             CLOCK(pages, faultsClock, i);                                   // calculate CLOCK faults for curr working set
         }
+
+/*************** ISSUE AFTER THIS POINT *******************************/////////
+        lrutot += faultsLRU[0];/*****8 90U REMOVE ************************************************************8*/
+        lrufin += faultsLRU[18];/*****8 90U REMOVE ************************************************************8*/
 
         // with the faults calculated for the current experiment
         // add the faults to the corresponding index in the 2d array to get sum
@@ -107,17 +110,24 @@ int main(int argc, char *argv[])
                 }
             }
         }
-//    }
+    }
+
+    cout << "lrutot: " << lrutot << endl;/*****8 90U REMOVE ************************************************************8*/
+    cout << "lrufin: " << lrufin << endl;/*****8 90U REMOVE ************************************************************8*/
 
     // now divide each element in the array by 1000 to get average
-    // for(int r = 0; r < 3; r++)
-    //     for(int c = 0; c < 19; c++)
-    //         faults[r][c] = faults[r][c] / 1000;
+    for(int r = 0; r < 3; r++)
+    {
+        for(int c = 0; c < 19; c++)
+        {
+            cout << faults[r][c] << " ";/*****8 90U REMOVE ************************************************************8*/
+            //faults[r][c] = faults[r][c] / 1000;
+        }
+        cout << endl;
+    }
+    saveData(faults, 19);                                                   // pass faults array to saveData function for data.csv
 
-    // now pass 2d array to generate data function to get csv file
-    saveData(faults, numWorkSets);
-
-    return 0;// program completed successfully
+    return 0;                                                               // program completed
 }
 
 /***************************************************************************
@@ -199,11 +209,10 @@ void FIFO(int *pageStream, int *faultsFIFO, int setNum)
     }
 }
 
-
 /***************************************************************************
 * void CLOCK(int *pageStream, int *faultsClock, int setNum)
 * Author: Milan Gulati
-* Date: 13 April 2021
+* Date: 18 April 2021
 * Description:  Iterates through page stream and calculates page faults for the given
 *               working set size using the Clock algorithm.
 *               Updates faultsClock array in main function each time fault encountered.
@@ -253,7 +262,7 @@ void CLOCK(int *pageStream, int *faultsClock, int setNum)
 /***************************************************************************
 * bool checkPage(int currPage, clockElement *set, int working_size)
 * Author: Milan Gulati
-* Date: 13 April 2021
+* Date: 18 April 2021
 * Description:  Checks if the current page is in the set. If found
 *               it sets the use bit to 1 and returns true. Otherwise
 *               returns false.
@@ -280,7 +289,7 @@ bool checkPage(int currPage, clockElement *set, int working_size)
 /***************************************************************************
 * void saveData(int faults[][19], int numWorkSets)
 * Author: Milan Gulati
-* Date: 13 April 2021
+* Date: 18 April 2021
 * Description:  Saves data from passed array into data.csv.
 *               Also prints data to console.
 *
@@ -293,12 +302,18 @@ void saveData(int faults[][19], int numWorkSets)
     cout << "\n1000 Trial Average Page Faults for each Algorithm for each Working Set Size (2-20):\n" << endl;
     for(int r = 0; r < 3;r++)                                               // iterate over each row
     {
-        if(r == 0)
+        if(r == 0)                                                          // LRU row
+        {
             cout << "LRU:\t";
-        if(r == 1)
+        }
+        if(r == 1)                                                          // FIFO row
+        {
             cout << "FIFO:\t";
-        if(r == 2)
+        }
+        if(r == 2)                                                          // Clock row
+        {
             cout << "CLOCK:\t";
+        }
 
         for(int c = 0; c < numWorkSets; c++)                                // iterate over each column (working size)
         {
