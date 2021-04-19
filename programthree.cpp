@@ -17,8 +17,9 @@
 #include <algorithm>                                                        // vectors and find()
 #include <bits/stdc++.h>                                                    // queues
 #include <fstream>                                                          // write csv file
+#include <iomanip>                                                          // output formatting
 
-using namespace std;                                                        // declare namespace
+using namespace std;                                                        // standard namespace
 
 /* Clock Element Struct */
 struct clockElement
@@ -28,9 +29,9 @@ struct clockElement
 };
 
 /* Function Prototypes */
-void LRU(int *pageStream, int *faultsLRU, int numWorkSets);                 // Least Recently Used (LRU) Algorithm
-void FIFO(int *pageStream, int *faultsFIFO, int numWorkSets);               // First In First Out (FIFO) Algorithm
-void CLOCK(int *pageStream, int *faultsClock, int numWorkSets);             // Clock Algorithm
+void LRU(int *pageStream, int *faultsLRU, int setNum);                      // Least Recently Used (LRU) Algorithm
+void FIFO(int *pageStream, int *faultsFIFO, int setNum);                    // First In First Out (FIFO) Algorithm
+void CLOCK(int *pageStream, int *faultsClock, int setNum);                  // Clock Algorithm
 bool checkPage(int currPage, clockElement *set, int working_size);          // check if page is in set
 void saveData(int faults[][19], int numWorkSets);                           // print and save data to data.csv
 
@@ -51,50 +52,40 @@ void saveData(int faults[][19], int numWorkSets);                           // p
 ***************************************************************************/
 int main(int argc, char *argv[])
 {
-    int lrutot = 0;     /*****8 90U REMOVE ************************************************************8*/
-    int lrufin = 0;     /*****8 90U REMOVE ************************************************************8*/
     // 2D Array that tracks page faults for working sets size 2-20 for each algorithm
     // Rows represent:      LRU, FIFO, CLOCK
     // Columns represent:   Working Set of 2,3,4,5...,20
     // initialize to 0 for each of the  (= 3 * 19) spaces
     int faults[3][19] = {0};                                                // faults for LRU, FIFO, CLOCK (in order), for working set sizes 2-20                                              
-    int pages[1000] = {0};                                                  // store 1000 generated pages
+    int pages[1000];                                                        // store 1000 generated pages
 
     default_random_engine gen;                                              // random number generator
     poisson_distribution<int> distribution(10);                             // poisson distribution function using lambda 10
 
-    for(int e = 0; e < 1000; e++)
+    for(int e = 0; e < 1000; e++)                                           // do 1000 experiments
     {
         int faultsLRU[19] = {0};                                            // store LRU faults curr experiment
         int faultsFIFO[19] = {0};                                           // store FIFO faults curr experiment 
         int faultsClock[19] = {0};                                          // store CLOCK faults curr experiment
 
-        // Do 1000 experiments
-        // to get 1000 page nums for this round
         for(int i = 0; i <= 1000; i++)                                      // iterate 1000 times for 1000 pages
         {
             int page = distribution(gen);                                   // pass a randomly generated number into poisson function
             pages[i] = page;                                                // store new page into page stream
         }
 
-        int numWorkSets = sizeof(faultsFIFO)/sizeof(faultsFIFO[0]);         // number of working set sizes (19 represents array containing sizes 2-20)
-
-        for(int i = 0; i < 19; i++)                                // get faults for each working set size (2-20)
+        for(int i = 0; i < 19; i++)                                         // get faults for each working set size (2-20)
         {
             LRU(pages, faultsLRU, i);                                       // calculate LRU faults for curr working set
             FIFO(pages, faultsFIFO, i);                                     // calculate FIFO faults for curr working set
             CLOCK(pages, faultsClock, i);                                   // calculate CLOCK faults for curr working set
         }
 
-/*************** ISSUE AFTER THIS POINT *******************************/////////
-        lrutot += faultsLRU[0];/*****8 90U REMOVE ************************************************************8*/
-        lrufin += faultsLRU[18];/*****8 90U REMOVE ************************************************************8*/
-
         // with the faults calculated for the current experiment
         // add the faults to the corresponding index in the 2d array to get sum
-        for(int r = 0; r < 3; r++)
+        for(int r = 0; r < 3; r++)                                          // iterate over rows
         {
-            for(int c = 0; c < 19; c++)
+            for(int c = 0; c < 19; c++)                                     // iterate over columns
             {
                 if(r == 0)                                                  // LRU row
                 {
@@ -112,18 +103,14 @@ int main(int argc, char *argv[])
         }
     }
 
-    cout << "lrutot: " << lrutot << endl;/*****8 90U REMOVE ************************************************************8*/
-    cout << "lrufin: " << lrufin << endl;/*****8 90U REMOVE ************************************************************8*/
-
-    // now divide each element in the array by 1000 to get average
-    for(int r = 0; r < 3; r++)
+    // iterate over the faults array
+    // divide each element in the array by 1000 to get average
+    for(int r = 0; r < 3; r++)                                              // iterate over each alg
     {
-        for(int c = 0; c < 19; c++)
+        for(int c = 0; c < 19; c++)                                         // iterate over each working set size
         {
-            cout << faults[r][c] << " ";/*****8 90U REMOVE ************************************************************8*/
-            //faults[r][c] = faults[r][c] / 1000;
+            faults[r][c] = faults[r][c] / 1000;                             // div by 1000 for average
         }
-        cout << endl;
     }
     saveData(faults, 19);                                                   // pass faults array to saveData function for data.csv
 
@@ -139,9 +126,9 @@ int main(int argc, char *argv[])
 *               Updates faultsLRU array in main function each time fault encountered.
 *
 * Parameters:
-*   pageStream  I/P     int *[]     Array of 1000 page numbers generated
-*   faultsLRU   I/P     int *[]     Array of page faults for each working set size using LRU
-*   setNum      I/P     int         Current set number in faultsLRU array, also determines working set size
+*   pageStream  I/P     int *[]     1000 page numbers generated
+*   faultsLRU   I/P     int *[]     Page faults for each working set size using LRU
+*   setNum      I/P     int         Current set number in faultsLRU array
 ***************************************************************************/
 void LRU(int *pageStream, int *faultsLRU, int setNum)
 {
@@ -180,9 +167,9 @@ void LRU(int *pageStream, int *faultsLRU, int setNum)
 *               Updates faultsFIFO array in main function each time fault encountered.
 *
 * Parameters:
-*   pageStream  I/P     int *[]     Array of 1000 page numbers generated
-*   faultsFIFO  I/P     int *[]     Array of page faults for each working set size using FIFO
-*   setNum      I/P     int         Current set number in faultsFIFO array, also determines working set size
+*   pageStream  I/P     int *[]     1000 page numbers generated
+*   faultsFIFO  I/P     int *[]     Page faults for each working set size using FIFO
+*   setNum      I/P     int         Current set number in faultsFIFO array
 ***************************************************************************/
 void FIFO(int *pageStream, int *faultsFIFO, int setNum)
 {
@@ -218,14 +205,14 @@ void FIFO(int *pageStream, int *faultsFIFO, int setNum)
 *               Updates faultsClock array in main function each time fault encountered.
 *
 * Parameters:
-*   pageStream  I/P     int *[]     Array of 1000 page numbers generated
-*   faultsClock I/P     int *[]     Array of page faults for each working set size using Clock
-*   setNum      I/P     int         Current set number in faultsClock array, also determines working set size
+*   pageStream  I/P     int *[]     1000 page numbers generated
+*   faultsClock I/P     int *[]     Page faults for each working set size using Clock
+*   setNum      I/P     int         Current set number in faultsClock array
 ***************************************************************************/
 void CLOCK(int *pageStream, int *faultsClock, int setNum)
 {
     int working_size = setNum + 2;                                          // add 2 for 2-20
-    int setIndex = 0;                                                       // track current index in clock
+    int index = 0;                                                          // track current index in clock
     clockElement set[working_size];                                         // array of clock elements to hold working set
 
     for(int i = 0; i < working_size; i++)                                   // initialize the set
@@ -241,18 +228,18 @@ void CLOCK(int *pageStream, int *faultsClock, int setNum)
         {
             while(true)                                                     // loop over buffer until page replacement found
             {
-                if(set[setIndex].use == 0)                                  // if use bit zero
+                if(set[index].use == 0)                                     // if use bit zero
                 {
-                    if(set[setIndex].page != -1)    faultsClock[setNum]++;  // page fault (if not first page loaded into spot)
-                    set[setIndex].page = pageStream[i];                     // replace page
-                    set[setIndex].use = 1;                                  // set use bit 1
-                    setIndex = (setIndex + 1) % working_size;               // update frame pointer
+                    if(set[index].page != -1)    faultsClock[setNum]++;     // page fault (if not first page loaded into spot)
+                    set[index].page = pageStream[i];                        // replace page
+                    set[index].use = 1;                                     // set use bit 1
+                    index = (index + 1) % working_size;                     // update frame pointer
                     break;                                                  // exit loop
                 }
                 else                                                        // else use bit one
                 {
-                    set[setIndex].use = 0;                                  // set use 0
-                    setIndex = (setIndex + 1) % working_size;               // update frame pointer
+                    set[index].use = 0;                                     // set use 0
+                    index = (index + 1) % working_size;                     // update frame pointer
                 }                
             }
         }
@@ -268,10 +255,10 @@ void CLOCK(int *pageStream, int *faultsClock, int setNum)
 *               returns false.
 *
 * Parameters:
-*   currPage        I/P     int                 Current page searching for
-*   set             I/P     clockElement *[]    Array of clockElements containing working set
+*   currPage        I/P     int                 Page searching for
+*   set             I/P     clockElement *[]    Array containing working set
 *   working_size    I/P     int                 Working size of the set
-*   checkPage       O/P     bool                Flag if page found/not found
+*   checkPage       O/P     bool                Page found/not found
 ***************************************************************************/
 bool checkPage(int currPage, clockElement *set, int working_size)
 {
@@ -294,12 +281,14 @@ bool checkPage(int currPage, clockElement *set, int working_size)
 *               Also prints data to console.
 *
 * Parameters:
-*   faults      I/P     int [][19]      Array holding average page faults for each alg for each working set size.
-*   numWorkSets I/P     int             Number of working sets being tested
+*   faults      I/P     int [][19]      Average page faults for each alg for each working size.
+*   numWorkSets I/P     int             Number of working sets tested
 ***************************************************************************/
 void saveData(int faults[][19], int numWorkSets)
 {
-    cout << "\n1000 Trial Average Page Faults for each Algorithm for each Working Set Size (2-20):\n" << endl;
+    // print the following to console
+    // display average faults for each algorithm
+    cout << "\n1000 Trials: Average Page Faults for each Algorithm for each Working Set Size (2-20):\n" << endl;
     for(int r = 0; r < 3;r++)                                               // iterate over each row
     {
         if(r == 0)                                                          // LRU row
@@ -317,14 +306,16 @@ void saveData(int faults[][19], int numWorkSets)
 
         for(int c = 0; c < numWorkSets; c++)                                // iterate over each column (working size)
         {
-            cout << faults[r][c] << " ";                                    // print number of faults
+            cout << setw(4) << faults[r][c];                                // print number of faults
         }
         cout << endl;
     }
-    cout << "\nData Saved to data.csv for plotting.\n\n";
+    cout << "\nSaved to data.csv.\n\n";
 
+    // save fault data to csv file
+    // iterate over the faults array
+    // print in row order: LRU faults, FIFO faults, Clock faults
     ofstream dataFile("data.csv");                                          // open/create new data file
-
     for(int r = 0; r < 3; r++)                                              // iterate over each row (each algorithm)
     {
         for(int c = 0; c < numWorkSets; c++)                                // iterate over each column (each working size)
