@@ -7,6 +7,7 @@
 * LRU           - using Least Recently Used algorithm, calculate page faults for a given working set size
 * FIFO          - using First in First Out algorithm, calculate page faults for a given working set size
 * Clock         - using Clock algorithm, calculate page faults for a given working set size
+* checkPage     - used by the clock algorithm to check if page already in set
 * saveData      - save page fault averages to a csv file and print results to console
 ***************************************************************************/
 
@@ -27,11 +28,11 @@ struct clockElement
 };
 
 /* Function Prototypes */
-void LRU(int *pageStream, int *pageFaults, int numWorkSets);                // Least Recently Used (LRU) Algorithm
-void FIFO(int *pageStream, int *pageFaults, int numWorkSets);               // First In First Out (FIFO) Algorithm
-void CLOCK(int *pageStream, int *pageFaults, int numWorkSets);              // Clock Algorithm
-void saveData(int faults[][19], int numAlgs, int numWorkSets);              // print and save data to data.csv
-
+void LRU(int *pageStream, int *faultsLRU, int numWorkSets);                 // Least Recently Used (LRU) Algorithm
+void FIFO(int *pageStream, int *faultsFIFO, int numWorkSets);               // First In First Out (FIFO) Algorithm
+void CLOCK(int *pageStream, int *faultsClock, int numWorkSets);             // Clock Algorithm
+bool checkPage(int currPage, clockElement *set, int working_size);          // check if page is in set
+void saveData(int faults[][19], int numWorkSets);                           // print and save data to data.csv
 
 /***************************************************************************
 * int main(int argc, char *argv[])
@@ -50,9 +51,6 @@ void saveData(int faults[][19], int numAlgs, int numWorkSets);              // p
 ***************************************************************************/
 int main(int argc, char *argv[])
 {
-    //int num_expr = 1000;    // 1000 experiments
-    //int num_pageNum = 1000; // stream of 1000 page nums
-
     // 2D Array that tracks page faults for working sets size 2-20 for each algorithm
     // Rows represent:      LRU, FIFO, CLOCK
     // Columns represent:   Working Set of 2,3,4,5...,20
@@ -67,7 +65,7 @@ int main(int argc, char *argv[])
 //    {
         int faultsLRU[19] = {0};                                            // store LRU faults curr experiment
         int faultsFIFO[19] = {0};                                           // store FIFO faults curr experiment 
-        int faultsCLOCK[19] = {0};                                          // store CLOCK faults curr experiment
+        int faultsClock[19] = {0};                                          // store CLOCK faults curr experiment
 
         // Do 1000 experiments
         // to get 1000 page nums for this round
@@ -86,7 +84,7 @@ int main(int argc, char *argv[])
         {
             LRU(pages, faultsLRU, i);                                       // calculate LRU faults for curr working set
             FIFO(pages, faultsFIFO, i);                                     // calculate FIFO faults for curr working set
-            CLOCK(pages, faultsCLOCK, i);                                   // calculate CLOCK faults for curr working set
+            CLOCK(pages, faultsClock, i);                                   // calculate CLOCK faults for curr working set
         }
 
         // with the faults calculated for the current experiment
@@ -105,7 +103,7 @@ int main(int argc, char *argv[])
                 }
                 if(r == 2)                                                  // CLOCK row
                 {
-                    faults[r][c] += faultsCLOCK[c];                         // add CLOCK faults for curr working set to 2d faults arr
+                    faults[r][c] += faultsClock[c];                         // add CLOCK faults for curr working set to 2d faults arr
                 }
             }
         }
@@ -117,13 +115,13 @@ int main(int argc, char *argv[])
     //         faults[r][c] = faults[r][c] / 1000;
 
     // now pass 2d array to generate data function to get csv file
-    saveData(faults, 3, numWorkSets);
+    saveData(faults, numWorkSets);
 
     return 0;// program completed successfully
 }
 
 /***************************************************************************
-* int LRU(int *pageStream, int *faultsLRU, int setNum)
+* void LRU(int *pageStream, int *faultsLRU, int setNum)
 * Author: Milan Gulati
 * Date: 13 April 2021
 * Description:  Iterates through page stream and calculates page faults for the given
@@ -164,7 +162,7 @@ void LRU(int *pageStream, int *faultsLRU, int setNum)
 }
 
 /***************************************************************************
-* int FIFO(int *pageStream, int *faultsFIFO, int setNum)
+* void FIFO(int *pageStream, int *faultsFIFO, int setNum)
 * Author: Milan Gulati
 * Date: 13 April 2021
 * Description:  Iterates through page stream and calculates page faults for the given
@@ -201,101 +199,99 @@ void FIFO(int *pageStream, int *faultsFIFO, int setNum)
     }
 }
 
-void CLOCK(int *pageStream, int *pageFaults, int setNum)
+
+/***************************************************************************
+* void CLOCK(int *pageStream, int *faultsClock, int setNum)
+* Author: Milan Gulati
+* Date: 13 April 2021
+* Description:  Iterates through page stream and calculates page faults for the given
+*               working set size using the Clock algorithm.
+*               Updates faultsClock array in main function each time fault encountered.
+*
+* Parameters:
+*   pageStream  I/P     int *[]     Array of 1000 page numbers generated
+*   faultsClock I/P     int *[]     Array of page faults for each working set size using Clock
+*   setNum      I/P     int         Current set number in faultsClock array, also determines working set size
+***************************************************************************/
+void CLOCK(int *pageStream, int *faultsClock, int setNum)
 {
-    int working_size = setNum + 2;   // array is 0-19 so add 2 for 2-20
-    clockElement set[working_size]; // array of clock elements to hold working set
-   
-    // init the set
-    for(int i = 0; i < working_size; i++)
+    int working_size = setNum + 2;                                          // add 2 for 2-20
+    int setIndex = 0;                                                       // track current index in clock
+    clockElement set[working_size];                                         // array of clock elements to hold working set
+
+    for(int i = 0; i < working_size; i++)                                   // initialize the set
     {
-        set[i].page = -1;   // init all pages to -1
-        set[i].use = 0;     // init all use bits to 0
+        set[i].page = -1;                                                   // init all pages to -1 (empty)
+        set[i].use = 0;                                                     // init all use bits to 0
     }
 
-    int setInd = 0;       // start at index zero of set
-    int pageInd = 0;      // start at index zero of pages
-    while(pageInd != 1000)   // while still pages
+    for(int i = 0; i < 1000; i++)                                           // iterate over the 1000 pages
     {
-        int currPage = pageStream[pageInd];    // get current page
-
-        // first check if the page is in the set already and if all usebits full
-        bool inSet = false;
-        bool useFull = true;
-
-        for(int c = 0; c < working_size; c++)
-            if(set[c].use == 0) useFull = false;    // at least one use bit is empty
-
-        for(int c = 0; c < working_size; c++)
+        bool pageFound = checkPage(pageStream[i], set, working_size);       // check if page in set already
+        if(!pageFound)                                                      // if not in set
         {
-            // PAGE IN SET
-            if(set[c].page == currPage)
-            { 
-                inSet = true;
-                set[c].use = 1;  // reaffirm use bit as 1
-                //setInd = c;   // update current set index
-                break;
-            }
-            
-            else    // ELSE PAGE NOT MATCH SET USE BIT TO ZERO AND GO TO NEXT PAGE
+            while(true)                                                     // loop over buffer until page replacement found
             {
-                set[setInd].use = 0;
-                //setInd = c;   // update current set index
+                if(set[setIndex].use == 0)                                  // if use bit zero
+                {
+                    if(set[setIndex].page != -1)    faultsClock[setNum]++;  // page fault (if not first page loaded into spot)
+                    set[setIndex].page = pageStream[i];                     // replace page
+                    set[setIndex].use = 1;                                  // set use bit 1
+                    setIndex = (setIndex + 1) % working_size;               // update frame pointer
+                    break;                                                  // exit loop
+                }
+                else                                                        // else use bit one
+                {
+                    set[setIndex].use = 0;                                  // set use 0
+                    setIndex = (setIndex + 1) % working_size;               // update frame pointer
+                }                
             }
-
-            if(setInd + 1 < working_size)
-                setInd++; // increment counter if at end
-            else 
-                setInd = 0;  // else go to start again
-            
         }
-
-        // PAGE NOT IN SET AND ALL USE BITS FULL
-        if(!inSet && useFull)
-            for(int c = 0; c < working_size; c++)   // iterate over the set
-                set[c].use = 0; // set all usebits to 0     
-
-        // PAGE NOT IN SET
-        if(!inSet)
-        {
-            while(set[setInd].use == 1)
-            {
-                set[setInd].use = 0;
-
-                // go to next element in working set
-                if(setInd + 1 < working_size)
-                    setInd++; // increment counter if at end
-                else 
-                    setInd = 0;  // else go to start again
-            }
-            // REPLACE PAGE now use bit should be freed for current page
-            if(set[setInd].use == 0)
-            {
-                if(set[setInd].page != -1)
-                    pageFaults[setNum]++;  // page faults start being counted after first working_size number of pages loaded into set
-
-                set[setInd].page = currPage;  // set current page to curr page
-                set[setInd].use = 1;          // set use bit to 1
-            }
-
-            // go to next element in working set
-            if(setInd + 1 < working_size)
-                setInd++; // increment counter if at end
-            else 
-                setInd = 0;  // else go to start again
-        }
-        pageInd++; // go to next page
     }
 }
 
-// given 2d array, print to csv and to console
-// when printing to csv, add row and column labels
-void saveData(int faults[][19], int numAlgs, int numWorkSets)
+/***************************************************************************
+* bool checkPage(int currPage, clockElement *set, int working_size)
+* Author: Milan Gulati
+* Date: 13 April 2021
+* Description:  Checks if the current page is in the set. If found
+*               it sets the use bit to 1 and returns true. Otherwise
+*               returns false.
+*
+* Parameters:
+*   currPage        I/P     int                 Current page searching for
+*   set             I/P     clockElement *[]    Array of clockElements containing working set
+*   working_size    I/P     int                 Working size of the set
+*   checkPage       O/P     bool                Flag if page found/not found
+***************************************************************************/
+bool checkPage(int currPage, clockElement *set, int working_size)
 {
-                                                                            //
-    // print to console
+    for(int i = 0; i < working_size; i++)                                   // iterate over set
+    {
+        if(set[i].page == currPage)                                         // page found
+        {
+            set[i].use = 1;                                                 // set use bit to 1
+            return true;                                                    // return true
+        }
+    }
+    return false;                                                           // otherwise return false
+}
+
+/***************************************************************************
+* void saveData(int faults[][19], int numWorkSets)
+* Author: Milan Gulati
+* Date: 13 April 2021
+* Description:  Saves data from passed array into data.csv.
+*               Also prints data to console.
+*
+* Parameters:
+*   faults      I/P     int [][19]      Array holding average page faults for each alg for each working set size.
+*   numWorkSets I/P     int             Number of working sets being tested
+***************************************************************************/
+void saveData(int faults[][19], int numWorkSets)
+{
     cout << "\n1000 Trial Average Page Faults for each Algorithm for each Working Set Size (2-20):\n" << endl;
-    for(int r = 0; r < numAlgs;r++)
+    for(int r = 0; r < 3;r++)                                               // iterate over each row
     {
         if(r == 0)
             cout << "LRU:\t";
@@ -304,27 +300,27 @@ void saveData(int faults[][19], int numAlgs, int numWorkSets)
         if(r == 2)
             cout << "CLOCK:\t";
 
-        for(int c = 0; c < numWorkSets;c++)
+        for(int c = 0; c < numWorkSets; c++)                                // iterate over each column (working size)
         {
-            cout << faults[r][c] << " ";
+            cout << faults[r][c] << " ";                                    // print number of faults
         }
         cout << endl;
     }
     cout << "\nData Saved to data.csv for plotting.\n\n";
 
-    ofstream dataFile("data.csv");      // open/create new data file
+    ofstream dataFile("data.csv");                                          // open/create new data file
 
-    for(int r = 0; r < numAlgs; r++)    // iterate over faults array to save to csv
+    for(int r = 0; r < 3; r++)                                              // iterate over each row (each algorithm)
     {
-        for(int c = 0; c < numWorkSets; c++)
+        for(int c = 0; c < numWorkSets; c++)                                // iterate over each column (each working size)
         {
-            dataFile << faults[r][c];   // save index into file
-            if(c != numWorkSets)        // only add comma if not at end of row
+            dataFile << faults[r][c];                                       // save index into file
+            if(c != numWorkSets)                                            // only add comma if not at end of row
             {
-                dataFile << ",";        // comma delimiter
+                dataFile << ",";                                            // comma delimiter
             }
         }
-        dataFile << "\n";               // next line
+        dataFile << "\n";                                                   // next line
     }
-    dataFile.close();   // close the data file
+    dataFile.close();                                                       // close the data file
 }
