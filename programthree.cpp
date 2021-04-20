@@ -1,17 +1,16 @@
 /***************************************************************************
 * File: programthree.cpp
 * Author: Milan Gulati
-* Modified: 18 April 2021
+* Modified: 20 April 2021
 * Procedures:
 * main          - generate poission distubution and determine page faults for each algorithm and working set
 * LRU           - using Least Recently Used algorithm, calculate page faults for a given working set size
 * FIFO          - using First in First Out algorithm, calculate page faults for a given working set size
 * Clock         - using Clock algorithm, calculate page faults for a given working set size
-* checkPage     - used by the clock algorithm to check if page already in set
+* checkPage     - used by the clock algorithm to check if page already in mem
 * saveData      - save page fault averages to a csv file and print results to console
 ***************************************************************************/
 
-/* Libraries */
 #include <iostream>                                                         // input/output
 #include <random>                                                           // poission distrubution
 #include <algorithm>                                                        // vectors and find()
@@ -21,18 +20,16 @@
 
 using namespace std;                                                        // standard namespace
 
-/* Clock Element Struct */
-struct clockElement
+struct clockElement                                                         // Clock Element Structure (used by clock alg)
 {
     int page;                                                               // page number
     int use;                                                                // use bit (0 or 1)
 };
 
-/* Function Prototypes */
 void LRU(int *pageStream, int *faultsLRU, int setNum);                      // Least Recently Used (LRU) Algorithm
 void FIFO(int *pageStream, int *faultsFIFO, int setNum);                    // First In First Out (FIFO) Algorithm
-void CLOCK(int *pageStream, int *faultsClock, int setNum);                  // Clock Algorithm
-bool checkPage(int currPage, clockElement *set, int working_size);          // check if page is in set
+void Clock(int *pageStream, int *faultsClock, int setNum);                  // Clock Algorithm
+bool checkPage(int currPage, clockElement *wset, int working_size);         // check if page is in set
 void saveData(int faults[][19], int numWorkSets);                           // print and save data to data.csv
 
 /***************************************************************************
@@ -52,10 +49,10 @@ void saveData(int faults[][19], int numWorkSets);                           // p
 ***************************************************************************/
 int main(int argc, char *argv[])
 {
-    // 2D Array that tracks page faults for working sets size 2-20 for each algorithm
-    // Rows represent:      LRU, FIFO, CLOCK
-    // Columns represent:   Working Set of 2,3,4,5...,20
-    // initialize to 0 for each of the  (= 3 * 19) spaces
+    // 2D array tracks page faults for working sets size 2-20 for each algorithm
+    // Rows     :   LRU, FIFO, CLOCK
+    // Columns  :   Working Set of 2,3,4,5...,20
+    // initialize to 0 for each of the  57 (3 * 19) spaces
     int faults[3][19] = {0};                                                // faults for LRU, FIFO, CLOCK (in order), for working set sizes 2-20                                              
     int pages[1000];                                                        // store 1000 generated pages
 
@@ -68,7 +65,7 @@ int main(int argc, char *argv[])
         int faultsFIFO[19] = {0};                                           // store FIFO faults curr experiment 
         int faultsClock[19] = {0};                                          // store CLOCK faults curr experiment
 
-        for(int i = 0; i <= 1000; i++)                                      // iterate 1000 times for 1000 pages
+        for(int i = 0; i <= 1000; i++)                                      // generate 1000 page numbers
         {
             int page = distribution(gen);                                   // pass a randomly generated number into poisson function
             pages[i] = page;                                                // store new page into page stream
@@ -76,13 +73,13 @@ int main(int argc, char *argv[])
 
         for(int i = 0; i < 19; i++)                                         // get faults for each working set size (2-20)
         {
-            LRU(pages, faultsLRU, i);                                       // calculate LRU faults for curr working set
-            FIFO(pages, faultsFIFO, i);                                     // calculate FIFO faults for curr working set
-            CLOCK(pages, faultsClock, i);                                   // calculate CLOCK faults for curr working set
+            LRU(pages, faultsLRU, i);                                       // calculate LRU faults for working set i
+            FIFO(pages, faultsFIFO, i);                                     // calculate FIFO faults for working set i
+            Clock(pages, faultsClock, i);                                   // calculate CLOCK faults for working set i
         }
 
         // with the faults calculated for the current experiment
-        // add the faults to the corresponding index in the 2d array to get sum
+        // add the faults to the corresponding index in the 2D array for sum
         for(int r = 0; r < 3; r++)                                          // iterate over rows
         {
             for(int c = 0; c < 19; c++)                                     // iterate over columns
@@ -105,7 +102,7 @@ int main(int argc, char *argv[])
 
     // iterate over the faults array
     // divide each element in the array by 1000 to get average
-    for(int r = 0; r < 3; r++)                                              // iterate over each alg
+    for(int r = 0; r < 3; r++)                                              // iterate over rows
     {
         for(int c = 0; c < 19; c++)                                         // iterate over each working set size
         {
@@ -133,29 +130,30 @@ int main(int argc, char *argv[])
 void LRU(int *pageStream, int *faultsLRU, int setNum)
 {
     int working_size = setNum + 2;                                          // working set size is place in faults array + 2
-    vector<int> set;                                                        // contains working set
+    vector<int> wset;                                                       // working set
 
     for(int i = 0; i < 1000; i++)                                           // iterate through each element in page stream
     {
-        if(!(find(set.begin(), set.end(), pageStream[i]) != set.end()))     // if set does not contain desired page
+        if(!(find(wset.begin(), wset.end(), pageStream[i]) != wset.end()))  // if set does not contain desired page
         {
-            if(set.size() == working_size)                                  // if set is full - replace
+            if(wset.size() == working_size)                                 // if set is full - replace
             {
-                set.erase(set.begin());                                     // delete first element of vector
-                set.push_back(pageStream[i]);                               // append new page to end
+                wset.erase(wset.begin());                                   // delete first element of vector
+                wset.push_back(pageStream[i]);                              // append new page to end
                 faultsLRU[setNum]++;                                        // increment page faults
             }
-            else if(set.size() < working_size)                              // else if can fit the page - append page
+            else if(wset.size() < working_size)                             // else if can fit the page - append page
             {
-                set.push_back(pageStream[i]);                               // add page at current index in vector
+                wset.push_back(pageStream[i]);                              // add page at current index in vector
             }
         }
         else                                                                // else set already contains page - no page fault
         {
-            set.erase(find(set.begin(), set.end(), pageStream[i]));         // erase page at current location
-            set.push_back(pageStream[i]);                                   // put page at the end
+            wset.erase(find(wset.begin(), wset.end(), pageStream[i]));      // erase page at current location
+            wset.push_back(pageStream[i]);                                  // put page at the end
         }
     }
+    vector<int>().swap(wset);                                               // swap with empty vector to deallocate mem
 }
 
 /***************************************************************************
@@ -174,30 +172,31 @@ void LRU(int *pageStream, int *faultsLRU, int setNum)
 void FIFO(int *pageStream, int *faultsFIFO, int setNum)
 {
     int working_size = setNum + 2;                                          // array is 0-19 so add 2 for 2-20
-    deque<int> set;                                                         // deque for easy traversal and FIFO removal
+    deque<int> wset;                                                        // deque for easy traversal and FIFO removal
 
     for(int i = 0; i < 1000; i++)                                           // iterate through each page in stream
     {
         // if the queue does not have the current page number
         // else page already in queue - do nothing
-        if(!(find(set.begin(), set.end(), pageStream[i]) != set.end()))     // if deque does not have current page num
+        if(!(find(wset.begin(), wset.end(), pageStream[i]) != wset.end()))  // if deque does not have current page num
         {
-            if(set.size() == working_size)                                  // if deque full
+            if(wset.size() == working_size)                                 // if deque full
             {
-                set.pop_front();                                            // remove old page from front
-                set.push_back(pageStream[i]);                               // add new page to back
+                wset.pop_front();                                           // remove old page from front
+                wset.push_back(pageStream[i]);                              // add new page to back
                 faultsFIFO[setNum]++;                                       // page fault
             }
-            else if(set.size() < working_size)                              // else not full
+            else if(wset.size() < working_size)                             // else not full
             {
-                set.push_back(pageStream[i]);                               // add new page to end of deque
+                wset.push_back(pageStream[i]);                              // add new page to end of deque
             }
         }
     }
+    deque<int>().swap(wset);                                                // swap with empty deque to deallocate mem
 }
 
 /***************************************************************************
-* void CLOCK(int *pageStream, int *faultsClock, int setNum)
+* void Clock(int *pageStream, int *faultsClock, int setNum)
 * Author: Milan Gulati
 * Date: 18 April 2021
 * Description:  Iterates through page stream and calculates page faults for the given
@@ -209,36 +208,36 @@ void FIFO(int *pageStream, int *faultsFIFO, int setNum)
 *   faultsClock I/P     int *[]     Page faults for each working set size using Clock
 *   setNum      I/P     int         Current set number in faultsClock array
 ***************************************************************************/
-void CLOCK(int *pageStream, int *faultsClock, int setNum)
+void Clock(int *pageStream, int *faultsClock, int setNum)
 {
     int working_size = setNum + 2;                                          // add 2 for 2-20
     int index = 0;                                                          // track current index in clock
-    clockElement set[working_size];                                         // array of clock elements to hold working set
+    clockElement wset[working_size];                                        // array of clock elements to hold working set
 
     for(int i = 0; i < working_size; i++)                                   // initialize the set
     {
-        set[i].page = -1;                                                   // init all pages to -1 (empty)
-        set[i].use = 0;                                                     // init all use bits to 0
+        wset[i].page = -1;                                                  // init all pages to -1 (empty)
+        wset[i].use = 0;                                                    // init all use bits to 0
     }
 
     for(int i = 0; i < 1000; i++)                                           // iterate over the 1000 pages
     {
-        bool pageFound = checkPage(pageStream[i], set, working_size);       // check if page in set already
+        bool pageFound = checkPage(pageStream[i], wset, working_size);      // check if page in set already
         if(!pageFound)                                                      // if not in set
         {
             while(true)                                                     // loop over buffer until page replacement found
             {
-                if(set[index].use == 0)                                     // if use bit zero
+                if(wset[index].use == 0)                                    // if use bit zero
                 {
-                    if(set[index].page != -1)    faultsClock[setNum]++;     // page fault (if not first page loaded into spot)
-                    set[index].page = pageStream[i];                        // replace page
-                    set[index].use = 1;                                     // set use bit 1
+                    if(wset[index].page != -1)    faultsClock[setNum]++;    // page fault (if not first page loaded into spot)
+                    wset[index].page = pageStream[i];                       // replace page
+                    wset[index].use = 1;                                    // set use bit 1
                     index = (index + 1) % working_size;                     // update frame pointer
                     break;                                                  // exit loop
                 }
                 else                                                        // else use bit one
                 {
-                    set[index].use = 0;                                     // set use 0
+                    wset[index].use = 0;                                    // set use 0
                     index = (index + 1) % working_size;                     // update frame pointer
                 }                
             }
@@ -256,17 +255,17 @@ void CLOCK(int *pageStream, int *faultsClock, int setNum)
 *
 * Parameters:
 *   currPage        I/P     int                 Page searching for
-*   set             I/P     clockElement *[]    Array containing working set
+*   wset            I/P     clockElement *[]    Array containing working set
 *   working_size    I/P     int                 Working size of the set
 *   checkPage       O/P     bool                Page found/not found
 ***************************************************************************/
-bool checkPage(int currPage, clockElement *set, int working_size)
+bool checkPage(int currPage, clockElement *wset, int working_size)
 {
     for(int i = 0; i < working_size; i++)                                   // iterate over set
     {
-        if(set[i].page == currPage)                                         // page found
+        if(wset[i].page == currPage)                                        // page found
         {
-            set[i].use = 1;                                                 // set use bit to 1
+            wset[i].use = 1;                                                // set use bit to 1
             return true;                                                    // return true
         }
     }
